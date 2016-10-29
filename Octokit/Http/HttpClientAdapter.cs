@@ -28,6 +28,7 @@ namespace Octokit.Internal
             Ensure.ArgumentNotNull(getHandler, "getHandler");
 
             _http = new HttpClient(new RedirectHandler { InnerHandler = getHandler() });
+            _http.Timeout = TimeSpan.FromMinutes(30);
         }
 
         /// <summary>
