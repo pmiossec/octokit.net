@@ -35,7 +35,8 @@ namespace Octokit
         /// The name (and optionally version) of the product using this library. This is sent to the server as part of
         /// the user agent for analytics purposes.
         /// </param>
-        public Connection(ProductHeaderValue productInformation)
+        /// <param name="timeout">The timespan to wait before which the requests will time out.</param>
+        public Connection(ProductHeaderValue productInformation, TimeSpan? timeout = null)
             : this(productInformation, _defaultGitHubApiUrl, _anonymousCredentials)
         {
         }
@@ -50,8 +51,9 @@ namespace Octokit
         /// <param name="httpClient">
         /// The client to use for executing requests
         /// </param>
-        public Connection(ProductHeaderValue productInformation, IHttpClient httpClient)
-            : this(productInformation, _defaultGitHubApiUrl, _anonymousCredentials, httpClient, new SimpleJsonSerializer())
+        /// <param name="timeout">The timespan to wait before which the requests will time out.</param>
+        public Connection(ProductHeaderValue productInformation, IHttpClient httpClient, TimeSpan? timeout = null)
+            : this(productInformation, _defaultGitHubApiUrl, _anonymousCredentials, httpClient, new SimpleJsonSerializer(), timeout)
         {
         }
 
@@ -65,8 +67,9 @@ namespace Octokit
         /// <param name="baseAddress">
         /// The address to point this client to such as https://api.github.com or the URL to a GitHub Enterprise
         /// instance</param>
-        public Connection(ProductHeaderValue productInformation, Uri baseAddress)
-            : this(productInformation, baseAddress, _anonymousCredentials)
+        /// <param name="timeout">The timespan to wait before which the requests will time out.</param>
+        public Connection(ProductHeaderValue productInformation, Uri baseAddress, TimeSpan? timeout = null)
+            : this(productInformation, baseAddress, _anonymousCredentials, timeout)
         {
         }
 
@@ -78,8 +81,9 @@ namespace Octokit
         /// the user agent for analytics purposes.
         /// </param>
         /// <param name="credentialStore">Provides credentials to the client when making requests</param>
-        public Connection(ProductHeaderValue productInformation, ICredentialStore credentialStore)
-            : this(productInformation, _defaultGitHubApiUrl, credentialStore)
+        /// <param name="timeout">The timespan to wait before which the requests will time out.</param>
+        public Connection(ProductHeaderValue productInformation, ICredentialStore credentialStore, TimeSpan? timeout = null)
+            : this(productInformation, _defaultGitHubApiUrl, credentialStore, timeout)
         {
         }
 
@@ -94,9 +98,16 @@ namespace Octokit
         /// The address to point this client to such as https://api.github.com or the URL to a GitHub Enterprise
         /// instance</param>
         /// <param name="credentialStore">Provides credentials to the client when making requests</param>
+        /// <param name="timeout">The timespan to wait before which the requests will time out.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
-        public Connection(ProductHeaderValue productInformation, Uri baseAddress, ICredentialStore credentialStore)
-            : this(productInformation, baseAddress, credentialStore, new HttpClientAdapter(HttpMessageHandlerFactory.CreateDefault), new SimpleJsonSerializer())
+        public Connection(ProductHeaderValue productInformation, Uri baseAddress, ICredentialStore credentialStore, TimeSpan? timeout = null)
+            : this(
+                productInformation,
+                baseAddress,
+                credentialStore,
+                new HttpClientAdapter(HttpMessageHandlerFactory.CreateDefault),
+                new SimpleJsonSerializer(),
+                timeout)
         {
         }
 
@@ -113,12 +124,14 @@ namespace Octokit
         /// <param name="credentialStore">Provides credentials to the client when making requests</param>
         /// <param name="httpClient">A raw <see cref="IHttpClient"/> used to make requests</param>
         /// <param name="serializer">Class used to serialize and deserialize JSON requests</param>
+        /// <param name="timeout">The timespan to wait before which the requests will time out.</param>
         public Connection(
             ProductHeaderValue productInformation,
             Uri baseAddress,
             ICredentialStore credentialStore,
             IHttpClient httpClient,
-            IJsonSerializer serializer)
+            IJsonSerializer serializer,
+            TimeSpan? timeout = null)
         {
             Ensure.ArgumentNotNull(productInformation, "productInformation");
             Ensure.ArgumentNotNull(baseAddress, "baseAddress");
@@ -137,6 +150,10 @@ namespace Octokit
             BaseAddress = baseAddress;
             _authenticator = new Authenticator(credentialStore);
             _httpClient = httpClient;
+            if(timeout.HasValue)
+            {
+                _httpClient.SetRequestsTimeout(timeout.Value);
+            }
             _jsonPipeline = new JsonHttpPipeline(serializer);
         }
 
